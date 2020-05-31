@@ -1,0 +1,35 @@
+function onClick() {
+var params = {};
+params.sysparm_parent_table = "interaction";
+params.sysparm_parent_sys_id = g_form.getUniqueValue();
+
+var paramsJSON = JSON.stringify(params);
+var request = new GlideAjax('RequestLinkSessionManager');
+request.addParam('sysparm_name', 'setComponentSessionValueMapJSON');
+request.addParam('workspace_request_session_data', paramsJSON);
+request.getXMLAnswer(function(answer){
+  openNewTab(g_form);
+});
+}
+
+function openNewTab(g_form) {
+var state = g_form.getValue('number');
+var sysID = g_form.getUniqueValue();
+var requestFor = g_form.getValue("opened_for");
+var shortDescription = g_form.getValue("short_description");
+g_form.setValue('state', 'closed_complete');
+g_form.save();
+
+if(requestFor != '' && shortDescription !=''){
+  var ga = new GlideAjax('sn_itsm_workspace.WorkSpaceChecker');
+  ga.addParam("sysparm_name", "closeInteractionCase");
+  ga.addParam("sysparm_requester", requestFor);
+  ga.getXML(getResponse);
+}
+function getResponse(response) {
+  var values = response.responseXML.documentElement.getAttribute('answer');//.toString();
+  var URL = 'https://'+ top.location.host + values;
+  top.window.open(URL, '_blank');
+  // 	}
+}
+}
