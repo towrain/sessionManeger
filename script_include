@@ -1,0 +1,45 @@
+var RequestLinkSessionManager = Class.create();
+RequestLinkSessionManager.prototype = Object.extendsObject(AbstractAjaxProcessor, {
+
+setComponentSessionValueMapJSON: function(session_data) {
+  session_data = session_data || this.getParameter("workspace_request_session_data");
+
+  // Set the session data
+  gs.getSession().putClientData('workspace_request_session_data', session_data);
+
+  return session_data;
+},
+
+getComponentSessionValueMapJSON: function() {
+  var session_data = gs.getSession().getClientData("workspace_request_session_data");
+  var parsed_session_data = global.JSON.parse(session_data);
+
+  var tableName = parsed_session_data.sysparm_parent_table;
+  var sysId = parsed_session_data.sysparm_parent_sys_id;
+  var tableRequestedForFieldName = "requested_for";
+  var response = {};
+
+  var grMapping = new GlideRecord('request_parent_mapping');
+  grMapping.addQuery("parent_table", tableName);
+  grMapping.query();
+
+  if(grMapping.next()){
+    tableRequestedForFieldName = grMapping.getValue("requested_for_field");
+  }
+
+  var grCurrent = new GlideRecord(tableName);
+  if(grCurrent.get(sysId)){
+    response.requested_for = grCurrent.getValue(tableRequestedForFieldName);
+    response.requested_by = grCurrent.getValue(tableRequestedForFieldName);
+    response.parent_sys_id = sysId;
+  }
+
+  // No longer needed, purge.
+  gs.getSession().putClientData("workspace_request_session_data", "");
+
+  var responseJSON = JSON.stringify(response);
+  return responseJSON;
+},
+
+  type: 'RequestLinkSessionManager'
+});
